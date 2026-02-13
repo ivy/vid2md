@@ -11,14 +11,17 @@ import (
 	"github.com/openai/openai-go/option"
 )
 
-const developerPrompt = `You are a technical writer. Given an interleaved timeline of transcript and visual descriptions from a video, produce a well-structured Markdown document that captures the content. Use headings, paragraphs, and formatting to create a readable article. Preserve key details from both the spoken content and visual elements. Do not include timestamps.`
-
 func assembleMarkdown(ctx context.Context, timeline []TimelineEntry, model, baseURL string) (string, error) {
 	opts := []option.RequestOption{}
 	if baseURL != "" {
 		opts = append(opts, option.WithBaseURL(baseURL))
 	}
 	client := openai.NewClient(opts...)
+
+	systemPrompt, err := promptFS.ReadFile("prompts/assembly-system.md.tmpl")
+	if err != nil {
+		return "", fmt.Errorf("read assembly system prompt: %w", err)
+	}
 
 	tmpl, err := template.ParseFS(promptFS, "prompts/assembly.md.tmpl")
 	if err != nil {
@@ -36,7 +39,7 @@ func assembleMarkdown(ctx context.Context, timeline []TimelineEntry, model, base
 	resp, err := client.Chat.Completions.New(ctx, openai.ChatCompletionNewParams{
 		Model: openai.ChatModel(model),
 		Messages: []openai.ChatCompletionMessageParamUnion{
-			openai.DeveloperMessage(developerPrompt),
+			openai.DeveloperMessage(string(systemPrompt)),
 			openai.UserMessage(buf.String()),
 		},
 	})
