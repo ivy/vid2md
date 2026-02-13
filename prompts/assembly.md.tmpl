@@ -1,0 +1,6 @@
+Here is an interleaved timeline of a video, combining transcript and visual descriptions:
+
+{{range .Timeline}}[{{.Timestamp}}] ({{.Kind}})
+{{if eq .Kind "transcript"}}> {{.Text}}{{else}}Visual: {{.Text}}{{end}}
+
+{{end}}
